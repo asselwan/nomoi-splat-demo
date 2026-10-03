@@ -31,14 +31,15 @@ for (const name of ['drawArraysInstanced', 'drawElementsInstanced']) {
   };
 }
 
-let yaw = 0;
-let pitch = 0.25;
-let radius = 5;
+const view = new URLSearchParams(location.search);
+let yaw = Number(view.get('yaw') ?? '2.07');
+let pitch = Number(view.get('pitch') ?? '0.105');
+let radius = Number(view.get('radius') ?? '6.55');
 let dragging = false;
 let lastX = 0, lastY = 0;
 function positionCamera() {
   camera.position.set(radius * Math.sin(yaw) * Math.cos(pitch), radius * Math.sin(pitch), radius * Math.cos(yaw) * Math.cos(pitch));
-  camera.lookAt(0, 0.5, 0);
+  camera.lookAt(0, 0, 0);
 }
 positionCamera();
 renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; renderer.domElement.setPointerCapture(e.pointerId); });
@@ -58,6 +59,7 @@ const mesh = new SplatMesh({
   onProgress: e => { if (e.lengthComputable) status.textContent = `Loading SPZ scene ${Math.min(100, Math.round(100 * e.loaded / e.total))}%`; },
   onLoad: () => { probe.loadedMs = performance.now(); status.textContent = 'Rendering SPZ scene…'; }
 });
+mesh.quaternion.set(1, 0, 0, 0);
 scene.add(mesh);
 mesh.initialized.catch(e => { status.textContent = `SPZ load failed: ${e.message}`; console.error(e); });
 
