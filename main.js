@@ -1405,7 +1405,6 @@ async function main() {
             };
             fr.readAsText(file);
         } else {
-            stopLoading = true;
             fr.onload = () => {
                 splatData = new Uint8Array(fr.result);
                 console.log("Loaded", Math.floor(splatData.length / rowLength));
