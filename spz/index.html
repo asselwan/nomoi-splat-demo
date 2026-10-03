@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOMOI sample Gaussian splat — SPZ comparison</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; font: 14px system-ui, sans-serif; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+    #panel { position: fixed; z-index: 2; top: 12px; left: 12px; max-width: 320px; padding: 10px 12px; border-radius: 8px; background: #101820dc; }
+    #panel label { display: block; margin-bottom: 5px; }
+    #scene-picker { max-width: 100%; }
+    #status { margin: 8px 0 0; }
+    #attribution { position: fixed; z-index: 2; bottom: 12px; left: 12px; max-width: 360px; padding: 10px 12px; border-radius: 8px; background: #101820dc; font-size: 13px; line-height: 1.4; }
+    a { color: #c9d9ff; }
+  </style>
+  <script type="importmap">
+    {"imports": {"three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/", "@sparkjsdev/spark": "./vendor/spark.module.min.js"}}
+  </script>
+</head>
+<body>
+  <div id="panel">
+    <label for="scene-picker">Scene</label>
+    <select id="scene-picker" aria-label="Scene" onchange="if(this.value) location.href=this.value">
+      <option value="../">Chili-salmon bowl · .splat</option>
+      <option value="../sparse/">Sparse photo prototype</option>
+      <option disabled>Fresh trained scene · pending</option>
+      <option value="./" selected>Chili-salmon bowl · SPZ</option>
+    </select>
+    <p id="status" role="status">Loading SPZ scene 0%</p>
+  </div>
+  <aside id="attribution"><strong>NOMOI technical sample</strong><br>Chili-salmon bowl from <a href="https://huggingface.co/datasets/promc/reconstruction-scenes">promc/reconstruction-scenes</a> (CC0). Not customer content. Viewer: <a href="https://github.com/sparkjsdev/spark">Spark</a> (MIT). SPZ: <a href="https://github.com/nianticlabs/spz">Niantic</a> (MIT). This SPZ keeps degree zero colour to match the .splat viewer.</aside>
+  <script type="module" src="./viewer.js"></script>
+</body>
+</html>

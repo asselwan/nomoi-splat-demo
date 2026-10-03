@@ -192,6 +192,13 @@
 			if(location.host.includes('hf.space')) document.body.classList.add('nohf');
 		</script>
 		<div id="info">
+			<label for="scene-picker">Scene</label>
+			<select id="scene-picker" aria-label="Scene" onchange="if(this.value) location.href=this.value">
+				<option value="../">Chili-salmon bowl · .splat</option>
+				<option value="./" selected>Sparse photo prototype</option>
+				<option disabled>Fresh trained scene · pending</option>
+				<option value="../spz/">Chili-salmon bowl · SPZ</option>
+			</select>
 			<h3 class="nohf">WebGL 3D Gaussian Splat Viewer</h3>
 			<p>
 			<small class="nohf">
