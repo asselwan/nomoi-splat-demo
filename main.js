@@ -758,7 +758,38 @@ async function main() {
         throw new Error(req.status + " Unable to load " + req.url);
 
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-    let splatData = new Uint8Array(await req.arrayBuffer());
+    const modelBytes = 9818592;
+    const progressBar = document.getElementById("progress");
+    const progressLabel = document.getElementById("load-progress");
+    let splatData;
+    if (req.body) {
+        const reader = req.body.getReader();
+        const chunks = [];
+        let received = 0;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.byteLength;
+            // The public response is gzip encoded and may omit Content-Length.
+            // Fetch streams decoded bytes, so use this scene's decoded size.
+            const percent = Math.min(99, Math.floor((100 * received) / modelBytes));
+            progressBar.style.width = percent + "%";
+            progressBar.setAttribute("aria-valuenow", String(percent));
+            progressLabel.textContent = `Loading scene ${percent}%`;
+        }
+        splatData = new Uint8Array(received);
+        let offset = 0;
+        for (const chunk of chunks) {
+            splatData.set(chunk, offset);
+            offset += chunk.byteLength;
+        }
+    } else {
+        splatData = new Uint8Array(await req.arrayBuffer());
+    }
+    progressBar.style.width = "100%";
+    progressBar.setAttribute("aria-valuenow", "100");
+    progressLabel.textContent = "Preparing scene…";
 
     const downsample =
         splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
@@ -1367,9 +1398,10 @@ async function main() {
         }
         const progress = (100 * vertexCount) / (splatData.length / rowLength);
         if (progress < 100) {
-            document.getElementById("progress").style.width = progress + "%";
+            progressLabel.textContent = "Preparing scene…";
         } else {
-            document.getElementById("progress").style.display = "none";
+            progressBar.style.display = "none";
+            progressLabel.style.display = "none";
         }
         fps.innerText = Math.round(avgFps) + " fps";
         if (isNaN(currentCameraIndex)) {

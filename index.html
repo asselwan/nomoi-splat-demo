@@ -143,10 +143,23 @@
 			#progress {
 				position: absolute;
 				top: 0;
+				left: 0;
+				width: 0;
 				height: 5px;
 				background: blue;
 				z-index: 99;
 				transition: width 0.1s ease-in-out;
+			}
+			#load-progress {
+				position: absolute;
+				top: 12px;
+				left: 12px;
+				z-index: 99;
+				padding: 6px 9px;
+				border-radius: 5px;
+				background: #101820d9;
+				color: white;
+				font: 13px system-ui, sans-serif;
 			}
 
 			#quality {
@@ -247,7 +260,8 @@ other
 			
 		</div>
 
-		<div id="progress"></div>
+		<div id="progress" role="progressbar" aria-label="Scene loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+		<div id="load-progress" aria-live="polite">Loading scene 0%</div>
         <aside id="attribution" style="position:fixed;z-index:101;left:12px;bottom:12px;max-width:360px;padding:10px 12px;background:#101820d9;color:white;font:13px/1.4 system-ui,sans-serif;border-radius:8px">
           <strong>NOMOI technical sample</strong><br>Chili-salmon bowl scene courtesy of <a href="https://huggingface.co/datasets/promc/reconstruction-scenes" target="_blank" rel="noopener noreferrer">promc/reconstruction-scenes</a> (CC0). Not customer content. Viewer: <a href="https://github.com/antimatter15/splat" target="_blank" rel="noopener noreferrer">antimatter15/splat</a> (MIT).
         </aside>
@@ -275,6 +289,6 @@ other
 		<div id="caminfo">
 			<span id="camid"></span>
 		</div>
-		<script src="main.js?v=94c4b6f"></script>
+		<script src="main.js?v=load-progress-20261003"></script>
 	</body>
 </html>
