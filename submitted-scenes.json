@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "upload-cc0-chili-salmon-bowl-repeat-test",
+    "name": "CC0 chili salmon bowl \u2014 repeat intake test",
+    "submitter": "NOMOI operator (repeat CC0 test)",
+    "provenance": "Repeat test of the already-used promc/reconstruction-scenes chili-salmon-bowl CC0 source (51 photos and supplied COLMAP model). Public test scene; no customer submission or new customer run.",
+    "trained_reconstruction": true,
+    "test_submission": true,
+    "photo_count": 51,
+    "registered_count": 51,
+    "asset": "submitted/upload-cc0-chili-salmon-bowl-repeat-test.splat",
+    "bytes": 8007808,
+    "created_utc": "2026-10-04T06:56:57.275760+00:00"
+  }
+]
