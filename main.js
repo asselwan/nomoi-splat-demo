@@ -741,6 +741,23 @@ async function main() {
     const params = new URLSearchParams(location.search);
     const trainedScene = params.get("scene") === "trained";
     if (trainedScene) document.getElementById("scene-picker").value = "./?scene=trained";
+    const submitted = await fetch("submitted-scenes.json", {cache: "no-store"})
+        .then(response => response.ok ? response.json() : [])
+        .catch(() => []);
+    const picker = document.getElementById("scene-picker");
+    for (const scene of submitted) {
+        const option = document.createElement("option");
+        option.value = "./?scene=" + encodeURIComponent(scene.id);
+        option.textContent = scene.name + " · " + (scene.test_submission ? "test · " : "") + "GPU trained";
+        picker.append(option);
+    }
+    const selected = submitted.find(scene => scene.id === params.get("scene"));
+    if (selected) {
+        picker.value = "./?scene=" + encodeURIComponent(selected.id);
+        const attribution = document.getElementById("submitted-attribution");
+        attribution.textContent = `${selected.name}: photos from ${selected.submitter}. Trained image-based reconstruction; ${selected.provenance}. ${selected.test_submission ? "Test submission, not customer content." : ""} No measurement or structural claims.`;
+        attribution.hidden = false;
+    }
     try {
         viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1)));
         carousel = false;
@@ -748,7 +765,7 @@ async function main() {
     const url = new URL(
         // "nike.splat",
         // location.href,
-        trainedScene ? "trained.splat" : "scene.splat",
+        selected ? selected.asset : trainedScene ? "trained.splat" : "scene.splat",
         location.href,
     );
     const req = await fetch(url, {
@@ -760,7 +777,7 @@ async function main() {
         throw new Error(req.status + " Unable to load " + req.url);
 
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-    const modelBytes = trainedScene ? 8271872 : 9818592;
+    const modelBytes = selected ? selected.bytes : trainedScene ? 8271872 : 9818592;
     const progressBar = document.getElementById("progress");
     const progressLabel = document.getElementById("load-progress");
     let splatData;
