@@ -739,6 +739,8 @@ let viewMatrix = defaultViewMatrix;
 async function main() {
     let carousel = true;
     const params = new URLSearchParams(location.search);
+    const trainedScene = params.get("scene") === "trained";
+    if (trainedScene) document.getElementById("scene-picker").value = "./?scene=trained";
     try {
         viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1)));
         carousel = false;
@@ -746,7 +748,7 @@ async function main() {
     const url = new URL(
         // "nike.splat",
         // location.href,
-        "scene.splat",
+        trainedScene ? "trained.splat" : "scene.splat",
         location.href,
     );
     const req = await fetch(url, {
@@ -758,7 +760,7 @@ async function main() {
         throw new Error(req.status + " Unable to load " + req.url);
 
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-    const modelBytes = 9818592;
+    const modelBytes = trainedScene ? 8271872 : 9818592;
     const progressBar = document.getElementById("progress");
     const progressLabel = document.getElementById("load-progress");
     let splatData;

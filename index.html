@@ -209,7 +209,7 @@
 			<select id="scene-picker" aria-label="Scene" onchange="if(this.value) location.href=this.value">
 				<option value="./" selected>Chili-salmon bowl · .splat</option>
 				<option value="./sparse/">Sparse photo prototype</option>
-				<option disabled>Fresh trained scene · pending</option>
+				<option value="./?scene=trained">Chili-salmon bowl · GPU trained</option>
 				<option value="./spz/">Chili-salmon bowl · SPZ</option>
 			</select>
 			<h3 class="nohf">WebGL 3D Gaussian Splat Viewer</h3>
@@ -270,7 +270,7 @@ other
 		<div id="progress" role="progressbar" aria-label="Scene loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 		<div id="load-progress">Loading scene 0%</div>
         <aside id="attribution" style="position:fixed;z-index:101;left:12px;bottom:12px;max-width:360px;padding:10px 12px;background:#101820d9;color:white;font:13px/1.4 system-ui,sans-serif;border-radius:8px">
-          <strong>NOMOI technical sample</strong><br>Chili-salmon bowl scene courtesy of <a href="https://huggingface.co/datasets/promc/reconstruction-scenes" target="_blank" rel="noopener noreferrer">promc/reconstruction-scenes</a> (CC0). Not customer content. Viewer: <a href="https://github.com/antimatter15/splat" target="_blank" rel="noopener noreferrer">antimatter15/splat</a> (MIT).
+          <strong>NOMOI Gaussian-splat demo</strong><br>Chili-salmon bowl photos and source scene courtesy of <a href="https://huggingface.co/datasets/promc/reconstruction-scenes" target="_blank" rel="noopener noreferrer">promc/reconstruction-scenes</a> (CC0). Not customer content. Viewer: <a href="https://github.com/antimatter15/splat" target="_blank" rel="noopener noreferrer">antimatter15/splat</a> (MIT).
         </aside>
 
 		<div id="message"></div>
@@ -296,6 +296,6 @@ other
 		<div id="caminfo">
 			<span id="camid"></span>
 		</div>
-		<script src="main.js?v=load-progress-20261003"></script>
+		<script src="main.js?v=runpod-trained-20261004"></script>
 	</body>
 </html>
