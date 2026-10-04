@@ -2,6 +2,8 @@
 
 This is a manual trigger for one locally synced Google Drive folder or a Dain WhatsApp attachment bundle. The sync/attachment bridge must first place each bundle in its own child directory under `--inbox`. No Google Drive or WhatsApp account is connected by this script.
 
+The host needs Python Pillow for image decoding checks, COLMAP for unposed photos, and the existing Beelink `.tools` trainer, quincunx, credential and converter executables.
+
 Put at least 15 overlapping JPG/PNG photos of one physical scene and `submission.json` in a new child folder. If a valid COLMAP `sparse/0/` binary model already exists, include it; otherwise the script runs the installed COLMAP pose solve. An example confirmation record:
 
 ```json

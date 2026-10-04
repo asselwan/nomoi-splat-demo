@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from PIL import Image
 
 IMAGE_EXT = {'.jpg', '.jpeg', '.png'}
 RIGHTS = ('owns_or_licensed_photos', 'may_reconstruct', 'may_publish_scene',
@@ -42,6 +43,11 @@ def validate(drop):
     for photo in photos:
         if photo.is_symlink() or photo.stat().st_size == 0:
             raise ValueError(f'invalid photo: {photo.name}')
+        try:
+            with Image.open(photo) as image:
+                image.verify()
+        except Exception as exc:
+            raise ValueError(f'unreadable photo: {photo.name}') from exc
     return data, photos
 
 
