@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NOMOI sample Gaussian splat — SPZ comparison</title>
+  <title>NOMOI sample Gaussian splat — SPZ 25% points</title>
   <style>
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; font: 14px system-ui, sans-serif; }
     canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -15,22 +15,22 @@
     a { color: #c9d9ff; }
   </style>
   <script type="importmap">
-    {"imports": {"three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/", "@sparkjsdev/spark": "./vendor/spark.module.min.js"}}
+    {"imports": {"three": "../vendor/three.module.js", "three/addons/": "../vendor/addons/", "@sparkjsdev/spark": "../vendor/spark.module.min.js"}}
   </script>
 </head>
 <body>
   <div id="panel">
     <label for="scene-picker">Scene</label>
     <select id="scene-picker" aria-label="Scene" onchange="if(this.value) location.href=this.value">
-      <option value="../">Chili-salmon bowl · .splat</option>
-      <option value="../sparse/">Sparse photo prototype</option>
+      <option value="../../">Chili-salmon bowl · .splat</option>
+      <option value="../../sparse/">Sparse photo prototype</option>
       <option disabled>Fresh trained scene · pending</option>
-      <option value="./" selected>Chili-salmon bowl · SPZ</option>
-      <option value="./25/">Chili-salmon bowl · SPZ 25% points</option>
+      <option value="../">Chili-salmon bowl · SPZ</option>
+      <option value="./" selected>Chili-salmon bowl · SPZ 25% points</option>
     </select>
     <p id="status" role="status">Loading SPZ scene 0%</p>
   </div>
-  <aside id="attribution"><strong>NOMOI technical sample</strong><br>Chili-salmon bowl from <a href="https://huggingface.co/datasets/promc/reconstruction-scenes">promc/reconstruction-scenes</a> (CC0). Not customer content. Viewer: <a href="https://github.com/sparkjsdev/spark">Spark</a> (MIT). SPZ: <a href="https://github.com/nianticlabs/spz">Niantic</a> (MIT). This SPZ keeps degree zero colour to match the .splat viewer.</aside>
-  <script type="module" src="./viewer.js?v=spz-framed-20261003"></script>
+  <aside id="attribution"><strong>NOMOI technical sample</strong><br>Chili-salmon bowl from <a href="https://huggingface.co/datasets/promc/reconstruction-scenes">promc/reconstruction-scenes</a> (CC0). Not customer content. Viewer: <a href="https://github.com/sparkjsdev/spark">Spark</a> (MIT). SPZ: <a href="https://github.com/nianticlabs/spz">Niantic</a> (MIT). This SPZ keeps 25% of the source points and degree zero colour.</aside>
+  <script type="module" src="./viewer.js?v=spz-25-20261004"></script>
 </body>
 </html>
