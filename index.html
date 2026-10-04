@@ -3,6 +3,12 @@
 	<head>
 		<title>NOMOI sample Gaussian splat — chili-salmon bowl</title>
 		<meta charset="utf-8" />
+		<script>
+			// Keep explicit comparison scenes on this viewer; send the entry URL to the fast scene.
+			if (!new URLSearchParams(location.search).has('scene')) {
+				location.replace('./spz/25/');
+			}
+		</script>
 		<meta
 			name="viewport"
 			content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
@@ -207,7 +213,7 @@
 		<div id="info">
 			<label for="scene-picker">Scene</label>
 			<select id="scene-picker" aria-label="Scene" onchange="if(this.value) location.href=this.value">
-				<option value="./" selected>Chili-salmon bowl · .splat</option>
+				<option value="./?scene=stock" selected>Chili-salmon bowl · .splat</option>
 				<option value="./sparse/">Sparse photo prototype</option>
 				<option value="./?scene=trained">Chili-salmon bowl · GPU trained</option>
 				<option value="./spz/">Chili-salmon bowl · SPZ</option>
