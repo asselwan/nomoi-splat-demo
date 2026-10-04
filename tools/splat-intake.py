@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Manually poll a synced Drive/Dain drop directory and wrap the existing splat rail.
 
-Each child directory contains images and submission.json. No network ingest is
+Each child directory contains photos or one video and submission.json. No network ingest is
 implied: the operator supplies --inbox on the host where attachments are synced.
 """
 import argparse
@@ -14,13 +14,15 @@ import shutil
 import struct
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 from PIL import Image
 
 IMAGE_EXT = {'.jpg', '.jpeg', '.png'}
-RIGHTS = ('owns_or_licensed_photos', 'may_reconstruct', 'may_publish_scene',
-          'property_and_occupant_authority', 'no_phi', 'faces_and_plates_cleared')
+VIDEO_EXT = {'.mp4', '.mov', '.m4v', '.mkv', '.webm'}
+RIGHTS = ('may_reconstruct', 'may_publish_scene', 'property_and_occupant_authority',
+          'no_phi', 'faces_and_plates_cleared')
 TOOLS = Path('/home/ainur/Apps/.tools')
 TOOL_HOST = 'ainur-shipleg'
 SSH = ('ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=6', TOOL_HOST)
@@ -42,21 +44,30 @@ def alert_real_submission(row, work, check=False):
     if row['test_submission'] or (work / 'dain-alert-sent.json').exists():
         return
     work.mkdir(parents=True, exist_ok=True)
-    title = ('Real splat submission ready for review' if check
-             else 'Real splat submission staged for deployment')
+    drill = row.get('alert_drill') is True
+    title = ('DRILL: synthetic splat intake alert; no customer submission' if drill else
+             ('Real splat submission ready for review' if check
+              else 'Real splat submission staged for deployment'))
     payload = {'source': 'splat-intake', 'severity': 'warning',
                'title': title,
-               'detail': f"scene={row['id']}; photos={row['photo_count']}; " +
+               'detail': ('Deliberate alert delivery test; no customer action or deployment. ' if drill else '') +
+                         f"scene={row['id']}; " +
+                         (f"video={row['source_video']}; frames={row.get('extracted_frame_count', 'pending')}; "
+                          if row.get('input_kind') == 'video' else f"photos={row['photo_count']}; ") +
                          (f"drop={row['drop']}; manual full run required" if check
                           else f"receipt={work / 'receipt.json'}")}
     request = urllib.request.Request(
         os.environ.get('DAIN_OPS_ALERT_URL', 'https://app.dainbot.com/api/ops-alert'),
         data=json.dumps(payload).encode(), method='POST',
-        headers={'Authorization': 'Bearer ' + dain_token(), 'Content-Type': 'application/json'})
+        headers={'Authorization': 'Bearer ' + dain_token(),
+                 'Content-Type': 'application/json',
+                 'User-Agent': 'nomoi-founder-broker/1.0'})
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
             if response.status != 200:
                 raise RuntimeError(f'Dain ops-alert HTTP {response.status}')
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f'Dain ops-alert failed for {row["id"]}: HTTP {exc.code}') from exc
     except Exception as exc:
         raise RuntimeError(f'Dain ops-alert failed for {row["id"]}: {type(exc).__name__}') from exc
     (work / 'dain-alert-sent.json').write_text(json.dumps({
@@ -85,9 +96,34 @@ def check_remote_tools():
 
 
 def validate(drop):
-    data = json.loads((drop / 'submission.json').read_text())
+    submission = drop / 'submission.json'
+    if submission.is_symlink() or not submission.is_file():
+        raise ValueError('regular submission.json required')
+    data = json.loads(submission.read_text())
     if not isinstance(data, dict):
         raise ValueError('submission must be an object')
+    media = sorted(p for p in drop.iterdir() if p.suffix.lower() in IMAGE_EXT | VIDEO_EXT)
+    photos = [p for p in media if p.suffix.lower() in IMAGE_EXT]
+    videos = [p for p in media if p.suffix.lower() in VIDEO_EXT]
+    if videos:
+        if len(videos) != 1 or photos:
+            raise ValueError('video submission requires exactly one media source')
+        kind, sources = 'video', videos
+        if data.get('owns_or_licensed_video') is not True:
+            raise ValueError('confirmed owns_or_licensed_video=true required before processing')
+        video = videos[0]
+        if video.is_symlink() or not video.is_file() or video.stat().st_size == 0:
+            raise ValueError(f'invalid video: {video.name}')
+        try:
+            with video.open('rb') as stream:
+                if not stream.read(1):
+                    raise ValueError('empty video')
+        except OSError as exc:
+            raise ValueError(f'unreadable video: {video.name}') from exc
+    else:
+        kind, sources = 'photos', photos
+        if data.get('owns_or_licensed_photos') is not True:
+            raise ValueError('confirmed owns_or_licensed_photos=true required before processing')
     for key in RIGHTS:
         if data.get(key) is not True:
             raise ValueError(f'confirmed {key}=true required before processing')
@@ -97,38 +133,62 @@ def validate(drop):
         raise ValueError('scene name required (1-80 characters)')
     if not isinstance(data.get('rights_statement'), str) or not data['rights_statement'].strip():
         raise ValueError('written rights statement required')
-    photos = sorted(p for p in drop.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXT)
-    if len(photos) < 15:
-        raise ValueError(f'15 photos minimum; found {len(photos)}')
-    for photo in photos:
-        if photo.is_symlink() or photo.stat().st_size == 0:
-            raise ValueError(f'invalid photo: {photo.name}')
-        try:
-            with Image.open(photo) as image:
-                image.verify()
-        except Exception as exc:
-            raise ValueError(f'unreadable photo: {photo.name}') from exc
-    return data, photos
+    if kind == 'photos':
+        if len(photos) < 15:
+            raise ValueError(f'15 photos minimum; found {len(photos)}')
+        for photo in photos:
+            if photo.is_symlink() or not photo.is_file() or photo.stat().st_size == 0:
+                raise ValueError(f'invalid photo: {photo.name}')
+            try:
+                with Image.open(photo) as image:
+                    image.verify()
+            except Exception as exc:
+                raise ValueError(f'unreadable photo: {photo.name}') from exc
+    return data, kind, sources
 
 
-def prepare_source(drop, photos, work):
+def prepare_source(drop, kind, sources, work):
     source = work / 'source'
     images = source / 'images'
     images.mkdir(parents=True)
-    for photo in photos:
-        shutil.copy2(photo, images / photo.name)
+    if kind == 'video':
+        run('ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', sources[0],
+            '-vf', 'fps=2,scale=1280:-2', '-frames:v', '120', '-q:v', '3',
+            images / '%04d.jpg')
+        frame_count = len(list(images.glob('*.jpg')))
+        if frame_count < 8:
+            raise ValueError(f'Need at least 8 overlapping views; got {frame_count}')
+    else:
+        for photo in sources:
+            shutil.copy2(photo, images / photo.name)
+        frame_count = None
     supplied = drop / 'sparse' / '0'
-    if all((supplied / name).is_file() for name in ('cameras.bin', 'images.bin', 'points3D.bin')):
+    if kind == 'photos' and all((supplied / name).is_file() for name in ('cameras.bin', 'images.bin', 'points3D.bin')):
         shutil.copytree(drop / 'sparse', source / 'sparse')
     else:
         database = work / 'colmap.db'
+        cpu_features = ('--SiftExtraction.use_gpu', '0') if kind == 'video' else ()
+        cpu_matching = ('--SiftMatching.use_gpu', '0') if kind == 'video' else ()
         run('colmap', 'feature_extractor', '--database_path', database,
-            '--image_path', images, '--ImageReader.single_camera', '1')
-        run('colmap', 'exhaustive_matcher', '--database_path', database)
+            '--image_path', images, '--ImageReader.single_camera', '1', *cpu_features)
+        run('colmap', 'exhaustive_matcher', '--database_path', database, *cpu_matching)
         sparse = source / 'sparse'
         sparse.mkdir()
+        mapper_threads = ('--Mapper.num_threads', '8') if kind == 'video' else ()
         run('colmap', 'mapper', '--database_path', database, '--image_path', images,
-            '--output_path', sparse)
+            '--output_path', sparse, *mapper_threads)
+        if kind == 'video':
+            names = ('cameras.bin', 'images.bin', 'points3D.bin')
+            models = [p for p in sparse.iterdir() if p.is_dir() and
+                      all((p / name).is_file() for name in names)]
+            if not models:
+                raise RuntimeError('COLMAP registered no complete model')
+            best = max(models, key=lambda p: (p / 'points3D.bin').stat().st_size)
+            if best.name != '0':
+                zero = sparse / '0'
+                if zero.exists():
+                    shutil.rmtree(zero)
+                best.rename(zero)
     model = source / 'sparse' / '0'
     if not all((model / name).is_file() for name in ('cameras.bin', 'images.bin', 'points3D.bin')):
         raise RuntimeError('COLMAP did not produce one complete sparse/0 model')
@@ -141,11 +201,11 @@ def prepare_source(drop, photos, work):
     registered = struct.unpack('<Q', header)[0]
     if registered < 8:
         raise RuntimeError('fewer than 8 registered camera views; stop before paid training')
-    return source, registered
+    return source, registered, frame_count
 
 
 def process(drop, args):
-    data, photos = validate(drop)
+    data, kind, sources = validate(drop)
     slug = re.sub(r'[^a-z0-9-]+', '-', drop.name.lower()).strip('-')[:50]
     if not slug:
         raise ValueError('drop folder needs a usable name')
@@ -163,17 +223,22 @@ def process(drop, args):
     if work.exists():
         raise ValueError('work folder already exists; inspect prior run before retry')
     if args.check:
-        alert_real_submission({'id': scene_id, 'photo_count': len(photos),
+        alert_real_submission({'id': scene_id, 'input_kind': kind,
+                               'photo_count': len(sources) if kind == 'photos' else None,
+                               'source_video': sources[0].name if kind == 'video' else None,
                                'test_submission': data.get('test_submission') is True,
+                               'alert_drill': data.get('alert_drill') is True,
                                'drop': str(drop)}, args.work / 'check-alerts' / slug, check=True)
         check_remote_tools()
-        print(json.dumps({'drop': str(drop), 'scene': scene_id, 'photos': len(photos),
+        print(json.dumps({'drop': str(drop), 'scene': scene_id,
+                          **({'photos': len(sources)} if kind == 'photos' else
+                             {'input_kind': 'video', 'source_video': sources[0].name}),
                           'rights_confirmed': True, 'test': data.get('test_submission') is True,
                           'remote_tools': TOOL_HOST}))
         return
     check_remote_tools()
     work.mkdir(parents=True)
-    source, registered = prepare_source(drop, photos, work)
+    source, registered, frame_count = prepare_source(drop, kind, sources, work)
     remote_work = remote('mktemp', '-d', '/tmp/splat-intake-ssh-XXXXXXXX')
     remote_source = remote_work + '/source'
     remote_ply = remote_work + '/trained.ply'
@@ -204,7 +269,11 @@ def process(drop, args):
     row = {'id': scene_id, 'name': data['name'], 'submitter': data['submitter'],
            'provenance': data['rights_statement'], 'trained_reconstruction': True,
            'test_submission': data.get('test_submission') is True,
-           'photo_count': len(photos), 'registered_count': registered,
+           'alert_drill': data.get('alert_drill') is True,
+           **({'photo_count': len(sources)} if kind == 'photos' else
+              {'input_kind': 'video', 'source_video': sources[0].name,
+               'extracted_frame_count': frame_count}),
+           'registered_count': registered,
            'asset': 'submitted/' + asset.name, 'bytes': asset.stat().st_size,
            'created_utc': dt.datetime.now(dt.timezone.utc).isoformat()}
     manifest.append(row)
