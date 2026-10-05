@@ -11,5 +11,19 @@
     "asset": "submitted/upload-cc0-chili-salmon-bowl-repeat-test.splat",
     "bytes": 8007808,
     "created_utc": "2026-10-04T06:56:57.275760+00:00"
+  },
+  {
+    "id": "floater-pass-30k-iters",
+    "name": "CC0 chili salmon bowl \u2014 floater-reduction pass (30k iters)",
+    "submitter": "NOMOI operator (quality pass)",
+    "provenance": "Same 51-photo promc/reconstruction-scenes chili-salmon-bowl CC0 source and COLMAP model as the original trained scene, re-trained with one parameter change: ns-train splatfacto --max-num-iterations raised from 7000 to 30000 (the nerfstudio/3D-Gaussian-Splatting-paper standard default), to let the densification/opacity-reset pruning schedule run to completion instead of stopping early. Public CC0 test scene; no customer submission.",
+    "trained_reconstruction": true,
+    "test_submission": true,
+    "photo_count": 51,
+    "registered_count": 51,
+    "asset": "submitted/floater-pass-30k-iters.splat",
+    "bytes": 7442848,
+    "created_utc": "2026-10-05T11:31:02.651765+00:00",
+    "quality_note": "Floater-count proxy (statistical-outlier-removal on visible splats, k=16NN, median+6*MAD threshold) dropped from 80630/258496 total vertices (31.4% of visible) on the original 7k-iteration scene to 45063/232589 total vertices (19.7% of visible) on this scene -- a 44% reduction in absolute floater-candidate splat count. Still has floaters; not a complete fix."
   }
 ]
